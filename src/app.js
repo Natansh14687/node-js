@@ -2,34 +2,28 @@ const express = require("express");
 
 const app = express();
 
-// => middleware for authenticating admin route
-app.use("/admin", (req, res, next) => {
-  console.log("inside /admin auth middleware...");
-  const token = "xyz";
-  const isAdminAuthorised = token === "xyz";
+const { adminAuth, userAuth } = require("../middlewares/auth");
 
-  if(!isAdminAuthorised){
-    res.status(401).send("Admin is not authorised !!");
-  }else{
-    next();
-  }
+// => middleware for authenticating admin route
+app.use("/admin", adminAuth);
+
+app.get("/user/login", (req, res, next) => {
+  console.log("Inside /user/login");
+  res.send("Response from /user/login route!!");
 });
 
-app.get("/user", (req, res, next)=>{
-  console.log("This is the response from user route");
-  res.send("Response from /user route !!");
-})
-
+app.get("/user/getData", userAuth, (req, res, next) => {
+  console.log("This is the response from /user/getData route");
+  res.send("Response from /user/getData route !!");
+});
 
 app.get("/admin/getData", (req, res, next) => {
   res.send("Getting the data from admin !");
 });
 
-app.delete("/admin/deleteData", (req, res, next)=>{
+app.delete("/admin/deleteData", (req, res, next) => {
   res.send("Deleting the data from the admin !");
 });
-
-
 
 app.listen(7777, () => {
   console.log("App is successfully listening at port 7777");
