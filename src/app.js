@@ -5,28 +5,45 @@ const app = express();
 const connectDB = require("../src/config/database");
 const User = require("./models/user");
 app.use(express.json());
+const { validateUserData } = require("./utils/validate");
+const bcrypt = require("bcrypt");
 
 app.post("/signup", async (req, res) => {
-  // Creating an instance of the User model
-  const user = new User(req.body);
-  allowedData = [
-    "firstName",
-    "lastName",
-    "age",
-    "email",
-    "gender",
-    "password",
-    "photoUrl",
-    "skills",
-  ];
+  const { firstName, lastName, email, password } = req.body;
   try {
+    // validate user data
+    validateUserData(req);
+
+    // encrypt the password
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log(passwordHash);
+
+    // Creating an instance of the User model
+    const user = new User({
+      firstName,
+      lastName,
+      email,
+      password: passwordHash,
+    });
+
+    allowedData = [
+      "firstName",
+      "lastName",
+      "age",
+      "email",
+      "gender",
+      "password",
+      "photoUrl",
+      "skills",
+    ];
+
     const isAllowedData = Object.keys(req.body).every((k) => {
       return allowedData.includes(k);
     });
-    if(!isAllowedData){
+    if (!isAllowedData) {
       throw new Error("extra fields are not allowed...");
     }
-    if(user?.skills.length > 10){
+    if (user?.skills.length > 10) {
       throw new Error("skills can't be more than 10");
     }
     await user.save();
