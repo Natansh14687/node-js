@@ -7,6 +7,7 @@ const User = require("./models/user");
 const { validateUserData } = require("./utils/validate");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
 
 app.use(express.json());
 app.use(cookieParser());
@@ -67,16 +68,12 @@ app.post("/login", async (req, res) => {
 
     const isCorrectPassword = await bcrypt.compare(password, user.password);
     if (isCorrectPassword) {
-
       // create a jwt token
-
-
+      const token = await jwt.sign({ _id: user._id }, "sEcReTkEy");
 
       // add jwt token to cookie and send response back to the user...
 
-      res.cookie("token", "gghfcbcbhjcfbhjfvbhjfvbhjfvjvjgvjvjnfnrjenjierijrv");
-
-
+      res.cookie("token", token);
 
       res.send("Login Successfull !!!");
     } else {
@@ -87,10 +84,26 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", (req, res) => {
-  const cookie = req.cookies;
-  console.log(cookie);
-  res.send("Cookie sent");
+app.get("/profile", async (req, res) => {
+  try {
+    const cookie = req.cookies;
+    // console.log(cookie);
+    // res.send("Cookie sent");
+
+    const { token } = cookie;
+    if (!token) {
+      throw new Error("logged out !! Please login again");
+    }
+    const decodedMsg = await jwt.verify(token, "sEcReTkEy");
+    // console.log(decodedMsg);
+
+    const { _id } = decodedMsg;
+
+    const user = await User.findById(_id);
+    res.send(user);
+  } catch (err) {
+    res.status(404).send("Error : " + err);
+  }
 });
 
 // getting users by email
