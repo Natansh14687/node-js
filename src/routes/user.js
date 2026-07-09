@@ -2,6 +2,7 @@ const express = require("express");
 const userRouter = express.Router();
 const { userAuth } = require("../middlewares/auth");
 const ConnectionRequest = require("../models/connectionRequest");
+const User = require("../models/user");
 
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
   try {
@@ -34,21 +35,49 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
       .populate("fromUserId", "firstName lastName")
       .populate("toUserId", "firstName lastName");
 
-    if(!userConnections.length){
-        throw new Error("No Connections !!");
+    if (!userConnections.length) {
+      throw new Error("No Connections !!");
     }
 
     const data = userConnections.map((field) => {
-        if(field.fromUserId._id.toString() === loggedInUser._id.toString()){
-            return field.toUserId;
-        }
-        return field.fromUserId;
-    })
+      if (field.fromUserId._id.toString() === loggedInUser._id.toString()) {
+        return field.toUserId;
+      }
+      return field.fromUserId;
+    });
 
     res.send(data);
-    
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+userRouter.get("/user/feed", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+
+    const connectionRequests = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    })
+      .select("fromUserId toUserId");
+
+    const hideUsersFromFeed = new Set();
+    connectionRequests.forEach(connection => {
+        hideUsersFromFeed.add(connection.fromUserId.toString());
+        hideUsersFromFeed.add(connection.toUserId.toString());
+    });
+    // console.log(hideUsersFromFeed);
+
+    const userFeed = await User.find({
+        $and : [
+            {_id : {$nin : Array.from(hideUsersFromFeed)}},
+            {_id : {$ne : loggedInUser._id}}
+        ]
+    }).select("firstName");
+    
+    res.send(userFeed);
+  } catch (err) {
+    res.status(400).send({ message: err.message });
   }
 });
 
