@@ -84,7 +84,7 @@ userSchema.methods.verifyPassword = async function (passwordInputbyUser) {
 userSchema.methods.jwtToken = async function () {
   const user = this;
 
-  const token = await jwt.sign({ _id: user._id }, "sEcReTkEy", {
+  const token = await jwt.sign({ _id: user._id }, process.env.JWT_SECRET_KEY, {
     expiresIn: "1h",
   });
 
