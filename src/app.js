@@ -10,6 +10,7 @@ const userRouter = require("./routes/user");
 const cors = require("cors");
 const { createServer } = require("http");
 const initializeSocket = require("./utils/socket");
+const chatRouter = require("./routes/chat");
 
 require("./utils/cronjob");
 
@@ -26,6 +27,7 @@ app.use("/", authRouter);
 app.use("/", profileRouter);
 app.use("/", requestRouter);
 app.use("/", userRouter);
+app.use("/", chatRouter);
 
 const server = createServer(app);
 initializeSocket(server);
